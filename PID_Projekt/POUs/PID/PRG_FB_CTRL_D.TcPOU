@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="PRG_FB_CTRL_D" Id="{724e9a58-dd80-4473-8a61-45c8ea585a8a}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_FB_CTRL_D
+VAR
+	fIn						: LREAL					:= 10.0;
+	fOut					: LREAL;
+
+	fManSyncValue			: LREAL;
+	bSync					: BOOL;
+
+	eMode					: E_CTRL_MODE;
+	stCTRL_D_PARAMS			: ST_CTRL_D_PARAMS;
+
+	eErrorId				: E_CTRL_ERRORCODES;
+	bError					: BOOL;
+	(* controller *)
+	fbCTRL_D				: FB_CTRL_D;
+	
+	bInit					: BOOL	:= TRUE;
+	fbTON					: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bInit THEN
+	(* init parameter struct *)
+	stCTRL_D_PARAMS.tCtrlCycleTime		:= T#10ms;
+	stCTRL_D_PARAMS.tTaskCycleTime		:= T#10MS;
+	stCTRL_D_PARAMS.tTv					:= T#0.01S;
+	stCTRL_D_PARAMS.tTd					:= T#1S;
+	stCTRL_D_PARAMS.fOutMaxLimit		:=  80.0;
+	stCTRL_D_PARAMS.fOutMinLimit		:= -80.0;
+
+	(* set the mode to ACTIVE --> normal operation *)
+	eMode := eCTRL_MODE_ACTIVE;
+
+	(* reset the init flag *)
+	bInit := FALSE;
+END_IF
+
+
+(* call controller *)
+fbCTRL_D	(	fIn					:= GVL.ErrorTerm,
+				fManSyncValue		:= fManSyncValue,
+				bSync				:= bSync,
+				eMode				:= eMode,
+				stParams			:= stCTRL_D_PARAMS,
+				fOut				=> GVL.D_Regler,
+				eErrorId			=> eErrorId,
+				bError				=> bError
+			);
+]]></ST>
+    </Implementation>
+    <LineIds Name="PRG_FB_CTRL_D">
+      <LineId Id="3" Count="14" />
+      <LineId Id="29" Count="11" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

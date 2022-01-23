@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="PID_Call" Id="{2b9ff86f-9f64-467a-a680-6bf6712098ea}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PID_Call
+VAR
+	Simulation: BOOL := 0;
+	Stoerungen: LREAL;
+	SteadyState: BOOL := 0;
+	D_Regler_Switch: BOOL := 1;
+	I_Regler_Switch: BOOL := 1;
+	Kp: LREAL;
+	Satuaration_Check_LimMax: LREAL := 0.5;
+	Satuaration_Check_LimMin: LREAL := -0.5;
+	Not_Equal_Block: BOOL;
+	Equal_Block: BOOL;
+	PID_Output_after_S_check: LREAL;
+	Drand: DRAND;
+	PID_OUT_LimMin: LREAL := -0.9;
+	PID_OUT_LimMax: LREAL := 0.9;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//*********Sensor
+Drand(Seed:=0);
+Stoerungen := (Drand.Num-0.5)*0.02;
+GVL.Position := GVL.Position * (1+Stoerungen);
+//GVL.Signal := GVL.Position;
+
+//*********Error Term from Feedback Path
+Drand(Seed:=0);	
+Stoerungen := (Drand.Num-0.5)*0.02;
+GVL.Signal := GVL.Position * (1+Stoerungen);
+GVL.ErrorTerm := GVL.Sollkraft - GVL.Signal;
+
+IF GVL.Position<(GVL.Sollkraft+0.015) AND GVL.Position>(GVL.Sollkraft-0.015) THEN
+	SteadyState :=1;
+ELSE SteadyState :=0;
+END_IF
+
+IF Simulation = 1 THEN
+	GVL.ErrorTerm := GVL.Sollkraft - GVL.Signal * (1+(Drand.Num-0.5)*1);
+END_IF
+
+IF SteadyState = 0 THEN
+	GVL.ErrorTerm := GVL.Sollkraft - GVL.Position;
+	D_Regler_Switch := 0;
+ELSE
+//	GVL.ErrorTerm := GVL.Sollkraft - GVL.Signal;
+	D_Regler_Switch := 1;
+END_IF
+
+//************I-Regler
+PRG_FB_CTRL_P();
+
+//************I-Regler
+IF I_Regler_Switch=1 THEN			
+	PRG_FB_CTRL_I();
+END_IF
+
+//************D-Regler (band-limited differentiator)
+IF I_Regler_Switch=1 THEN
+	PRG_FB_CTRL_D();
+END_IF
+
+//************Compute output and apply limits
+GVL.PID_Output := GVL.P_Regler + GVL.I_Regler + GVL.D_Regler;
+
+//************Saturation check
+IF GVL.PID_Output > Satuaration_Check_LimMax THEN
+	PID_Output_after_S_check := Satuaration_Check_LimMax;
+ELSIF GVL.PID_Output < Satuaration_Check_LimMin THEN
+	PID_Output_after_S_check := Satuaration_Check_LimMin;
+END_IF
+
+//************I-Regler Clamping
+IF GVL.PID_Output = PID_Output_after_S_check THEN
+	Not_Equal_Block:=0;
+ELSE Not_Equal_Block:=1;
+END_IF
+
+IF ((GVL.PID_Output>0) AND (GVL.ErrorTerm>0)) OR ((GVL.PID_Output<0) AND (GVL.ErrorTerm<0)) OR ((GVL.PID_Output=0) AND (GVL.ErrorTerm=0))THEN
+	Equal_Block := 1;
+ELSE Equal_Block := 0;
+END_IF
+
+IF Not_Equal_Block AND Equal_Block THEN
+	I_Regler_Switch := 0;
+ELSE I_Regler_Switch := 1;
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="PID_Call">
+      <LineId Id="9" Count="26" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="83" Count="1" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="147" Count="1" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="144" Count="1" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="98" Count="20" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="251" Count="0" />
+      <LineId Id="78" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

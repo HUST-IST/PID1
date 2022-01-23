@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GVL" Id="{7781904d-981b-482e-8d45-f20f49e1ec75}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	Signal: LREAL;
+	Position: LREAL;
+	Velocity: LREAL;
+	Sollkraft: LREAL := 1;
+	ErrorTerm: LREAL;
+	PID_Output: LREAL;
+	P_Regler: LREAL;
+	I_Regler: LREAL;
+	D_Regler: LREAL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="PRG_FB_CTRL_P" Id="{8237676e-ab80-4ee7-bc1d-b8d830a9c631}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_FB_CTRL_P
+VAR
+	fIn								: LREAL					:= 15.0;
+	fOut							: LREAL;
+
+	eMode							: E_CTRL_MODE;
+	stCTRL_P_PARAMS					: ST_CTRL_P_PARAMS;
+
+	eErrorId						: E_CTRL_ERRORCODES;
+	bError							: BOOL;
+
+	(* controller *)
+	fbCTRL_P						: FB_CTRL_P;
+
+	bInit							: BOOL	:= TRUE;
+	fbTON							: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bInit THEN
+	(* init parameter struct *)
+	stCTRL_P_PARAMS.tCtrlCycleTime	:= T#10MS;
+	stCTRL_P_PARAMS.tTaskCycleTime	:= T#10ms;
+	stCTRL_P_PARAMS.fKp				:= 3;								(* gain Kp	*)
+
+	(* set the mode to ACTIVE --> normal operation *)
+	eMode	:= eCTRL_MODE_ACTIVE;
+
+	(* reset the init flag *)
+	bInit	:= FALSE;
+END_IF
+
+
+(* call controller *)
+fbCTRL_P(fIn		:= GVL.ErrorTerm,
+		 eMode		:= eMode,
+		 stParams	:= stCTRL_P_PARAMS,
+		 fOut		=> GVL.P_Regler,
+		 eErrorId	=> eErrorId,
+		 bError		=> bError);
+]]></ST>
+    </Implementation>
+    <LineIds Name="PRG_FB_CTRL_P">
+      <LineId Id="3" Count="11" />
+      <LineId Id="24" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
